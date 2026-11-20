@@ -1,0 +1,16 @@
+Package: ConditionCodes
+Type: Package
+Title: Create Condition Code Lists from the HDRUK Phenotype Library
+Version: 0.0.0.9000
+Authors@R: 
+    person("Alistair", "Carr", , "alistair.carr@glasgow.ac.uk", role = c("aut", "cre"))
+Description: Creates lists of condition diagnostic codes based on condition phenotypes in the HDRUK Phenotype Library.
+License: `use_mit_license()`
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.1.9000
+Imports: tidyverse,
+        purrr
+Depends: 
+    R (>= 3.5)
