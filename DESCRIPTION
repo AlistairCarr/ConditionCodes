@@ -14,3 +14,5 @@ Imports: tidyverse,
         purrr
 Depends: 
     R (>= 3.5)
+URL: https://github.com/AlistairCarr/ConditionCodes
+BugReports: https://github.com/AlistairCarr/ConditionCodes/issues
