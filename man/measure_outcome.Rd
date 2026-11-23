@@ -40,5 +40,4 @@ measure_outcome(
 }
 \description{
 This function allows you to measure a health outcome from a table of diagnostic codes
-#' @importFrom stats na.omit setNames
 }

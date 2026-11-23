@@ -28,6 +28,10 @@ importFrom(purrr,
 )
 importFrom(readr,read_csv)
 importFrom(rlang,":=")
+importFrom(stats,
+  na.omit,
+  setNames
+)
 importFrom(stringr,
   str_detect,
   str_replace,

@@ -60,10 +60,9 @@ mental_health_codelist_with_codes4 <- fetch_codes(mental_health_codelist,
 
 
 
-CMS_codelist_with_codes <- fetch_codes2(CMS, three_char_ICD10 = TRUE)
+CMS_codelist_with_codes <- fetch_codes(CMS, three_char_ICD10 = TRUE)
 
 #realistically you'd only make the codelist with codes once then save that file
-
 
 cardiometabolic_codelist_with_codes <- fetch_codes(cardiometabolic, three_char_ICD10 = TRUE)
 
@@ -85,7 +84,7 @@ rm(list = setdiff(ls(), c("CMS_codelist_with_codes", "cardiometabolic_codelist_w
 data <- ConditionCodes::ukb_synthetic
 
 
-mm_CMS <- measure_outcome2(
+outcome_CMS <- measure_outcome(
   data = data,  #long form data frame with unique patient IDs, diagnostic codes per pt, date of diagnosis, and source of diagnosis
   condition_list = CMS_codelist_with_codes, #lookup file created with fetch_condition()
   mm_outcome_name = "CMS", #suffix for multimorbidity outcome var. Useful if you want to look at multiple way to diagnose mm.
@@ -94,7 +93,35 @@ mm_CMS <- measure_outcome2(
   patient_ID = "eid", #unique study ID / patient identifier
 )
 
+outcome_cardiometabolic <- measure_outcome(
+  data = data,  #long form data frame with unique patient IDs, diagnostic codes per pt, date of diagnosis, and source of diagnosis
+  condition_list = cardiometabolic_codelist_with_codes, #lookup file created with fetch_condition()
+  mm_outcome_name = "cardiometabolic", #suffix for multimorbidity outcome var. Useful if you want to look at multiple way to diagnose mm.
+  condition_threshold = 2, #threshold at which to measure multimorbidity,
+  coding_systems = "three_char_ICD10",  #could select only read codes, only ICD10 etc
+  patient_ID = "eid", #unique study ID / patient identifier
+  contributing_conditions = TRUE, ##show condition that contribute to cardiometabolic mm
+  condition_diagnoses = FALSE, #don't show all conditions diagnosed
+  condition_count = FALSE #don't show condition count
+)
 
 
-?measure_outcome
+outcomes_combined <- dplyr::left_join(outcome_CMS, outcome_cardiometabolic, by = "eid")
 
+
+#can also report by condition phenotyper if desired
+
+outcome_cardiometabolic_all_phenotypes <- measure_outcome2(
+  data = data,  #long form data frame with unique patient IDs, diagnostic codes per pt, date of diagnosis, and source of diagnosis
+  condition_list = cardiometabolic_codelist_with_codes, #lookup file created with fetch_condition()
+  mm_outcome_name = "cardiometabolic", #suffix for multimorbidity outcome var. Useful if you want to look at multiple way to diagnose mm.
+  condition_threshold = 2, #threshold at which to measure multimorbidity,
+  coding_systems = "three_char_ICD10",  #could select only read codes, only ICD10 etc
+  patient_ID = "eid", #unique study ID / patient
+  by_phenotype = TRUE, #report per phenotype rather than condition group
+  contributing_conditions = TRUE, ##show condition that contribute to cardiometabolic mm
+  condition_diagnoses = TRUE, #don't show all conditions diagnosed
+  condition_count = TRUE #don't show condition count
+)
+
+?fetch_codes

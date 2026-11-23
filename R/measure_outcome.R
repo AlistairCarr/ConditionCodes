@@ -31,7 +31,7 @@
 #' A function to calculate multimorbidity or single condition outcomes
 #'
 #' This function allows you to measure a health outcome from a table of diagnostic codes
-#' #' @importFrom stats na.omit setNames
+#' @importFrom stats na.omit setNames
 #' @importFrom dplyr mutate filter select left_join group_by arrange slice
 #'   summarise across any_of contains starts_with c_across everything if_else
 #'   relocate all_of
@@ -179,6 +179,13 @@ out <- out |>
 
 
 #get diagnosis dates
+
+
+# Only proceed if at least one condition was matched
+if (!any(startsWith(names(out), "inci."))) {
+  warning("No conditions were matched in the data. Returning empty result.")
+  return(out)
+}
 
 #make long format of data plus diagnosis source
 
