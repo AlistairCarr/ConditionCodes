@@ -38,7 +38,6 @@
 #' @importFrom tidyr pivot_longer
 #' @importFrom purrr map reduce discard
 #' @importFrom rlang :=
-#' @import tidyverse, purrr
 #' @param data Health data in long format consisting of
 #' @param condition_list Codelist dataset consisting of phenotype names, as written in the HDRUK Library, and the URL for each phenotype.Condition categories can consist of multiple phenotypes, but each phenotype must be on a seperate row.
 #' @param condition_threshold Threshold of conditions at which multimorbidity is defined
@@ -60,7 +59,7 @@ if(by_phenotype == FALSE) {
 
 temp <- condition_list %>%
     dplyr::group_by(Condition_category, Dx) %>%
-    summarise(
+    dplyr::summarise(
       across(
         phenotype_name | Code_list_source | contains("codes") | contains("three_char_ICD10"),
         ~ paste0(.x, collapse = ", ")
@@ -104,7 +103,7 @@ temp <- temp %>%
   }
 
  temp <- temp %>%
-  dplyr::mutate(across(c(contains("codes"), any_of("three_char_ICD10")), ~ str_replace_all(.x, ", ", "|")))
+  dplyr::mutate(across(c(contains("codes"), any_of("three_char_ICD10")), ~ stringr::str_replace_all(.x, ", ", "|")))
 
 
 ### make output file one per patient
@@ -135,7 +134,7 @@ pattern <- cols |>
   na.omit() %>%
   stringr::str_split(",\\s*") %>%
   unlist() %>%
-  str_trim() %>%
+  stringr::str_trim() %>%
   purrr::discard(~ .x == "") %>%  # remove empty strings
   paste(collapse = "|")
 
@@ -173,7 +172,7 @@ out <- out %>%
   dplyr::mutate(across(starts_with("inci."), ~ as.Date(.x))) %>%
   dplyr::mutate(
     condition_count = sum(!is.na(c_across(starts_with("inci.")))),
-    "mm.{mm_outcome_name}" := if_else(condition_count >= condition_threshold, 1, 0) #set to 1 if greather than threshold
+    "mm.{mm_outcome_name}" := dplyr::if_else(condition_count >= condition_threshold, 1, 0) #set to 1 if greather than threshold
   )
 
 
@@ -186,14 +185,14 @@ temp_out <- out %>%
   dplyr::mutate(across(starts_with("inci."), ~ as.Date(.x))) %>%
   dplyr::mutate(
     condition_count = sum(!is.na(c_across(starts_with("inci.")))),
-    "mm_status.{mm_outcome_name}" := if_else(condition_count >= condition_threshold, 1, 0)
+    "mm_status.{mm_outcome_name}" := dplyr::if_else(condition_count >= condition_threshold, 1, 0)
   ) %>%
   tidyr::pivot_longer(
     cols = c(starts_with("inci."), starts_with("dx.source.")),
     names_to = c(".value", "dx"),
     names_pattern = "^(inci|dx\\.source)\\.(.*)"
   ) %>%
-  dplyr::select(eid, condition_count, any_of(paste0("mm_status.", mm_outcome_name)), dx, inci, dx.source) %>%
+  dplyr::select(patient_ID, condition_count, any_of(paste0("mm_status.", mm_outcome_name)), dx, inci, dx.source) %>%
   dplyr::rename(date = inci)
 
 
@@ -208,21 +207,21 @@ condition_ranks <- map(1:condition_threshold, function(rank) {
                   "sixth", "seventh", "eighth", "ninth", "tenth")[rank]
 
   temp_out %>%
-    group_by(eid) %>%
-    arrange(date) %>%
-    slice(rank) %>%
+    dplyr::group_by(patient_ID) %>%
+    dplyr::arrange(date) %>%
+    dplyr::slice(rank) %>%
     dplyr::mutate(
       "inci.{rank_label}_con" := date,
-      "{rank_label}_con.dx" := ifelse(!is.na(date), str_replace(dx, "inci\\.", ""), NA),
+      "{rank_label}_con.dx" := ifelse(!is.na(date), stringr::str_replace(dx, "inci\\.", ""), NA),
       "{rank_label}_con.source" := dx.source
     ) %>%
-    dplyr::select(eid,
+    dplyr::select(patient_ID,
                   contains(paste0(rank_label, "_con")),
                   starts_with("inci."))
 })
 
 # Join all ranked condition data frames to out
-out <- reduce(condition_ranks, ~ left_join(.x, .y, by = "eid"), .init = out)
+out <- reduce(condition_ranks, ~ left_join(.x, .y, by = "patient_ID"), .init = out)
 
 # make data for multimorbidity diagnosis
 

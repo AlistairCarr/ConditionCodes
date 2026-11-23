@@ -42,8 +42,54 @@ mental_health_codelist_with_codes2 <- fetch_codes(mental_health_codelist, collap
 
 #you may also wish in long-form to see the description of all individual codes
 
-mental_health_codelist_with_codes_long <- fetch_codes(mental_health_codelist,
+mental_health_codelist3 <- fetch_codes(mental_health_codelist,
                                                       collapse_phenotypes = FALSE,
                                                       wide_format = FALSE)
 
+
+## if you're using Biobank data, also function to create a three character ICD10 code variable
+
+mental_health_codelist_with_codes4 <- fetch_codes(mental_health_codelist,
+                                                      collapse_phenotypes = FALSE,
+                                                      wide_format = TRUE,
+                                                  three_char_ICD10 = TRUE)
+
+#but not relevent for here
+
+#CMS list of conditions defined with ICD10 codes
+
+
+
+CMS_codelist_with_codes <- fetch_codes(CMS_codelist, three_char_ICD10 = TRUE)
+
+#realistically you'd only make the codelist with codes once then save that file
+
+
+cardiometabolic_codelist_with_codes <- fetch_codes(cardiometabolic, three_char_ICD10 = TRUE)
+
+#realistically you'd only make the codelist with codes once then save that file
+
+
+rm(list = setdiff(ls(), c("CMS_codelist_with_codes", "cardiometabolic_codelist_with_codes")))
+
+#could create altnerative codelists e.g. Barnett, Ho etc
+
+
+### calculate outcome with codelist as a lookup file
+
+data <- ConditionCodes::ukb_synthetic
+
+
+mm_CMS <- measure_outcome(
+  data = data,  #long form data frame with unique patient IDs, diagnostic codes per pt, date of diagnosis, and source of diagnosis
+  condition_list = CMS_codelist_with_codes, #lookup file created with fetch_condition()
+  mm_outcome_name = "CMS", #suffix for multimorbidity outcome var. Useful if you want to look at multiple way to diagnose mm.
+  condition_threshold = 2, #threshold at which to measure multimorbidity,
+  coding_systems = "all",  #could select only read codes, only ICD10 etc
+  patient_ID = "eid", #unique study ID / patient identifier
+)
+
+
+
+?measure_outcome
 
