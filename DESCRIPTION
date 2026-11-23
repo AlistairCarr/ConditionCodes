@@ -1,7 +1,7 @@
 Package: ConditionCodes
 Type: Package
 Title: Create Condition Code Lists from the HDRUK Phenotype Library
-Version: 0.0.4
+Version: 0.0.5
 Authors@R: 
     person("Alistair", "Carr", , "alistair.carr@glasgow.ac.uk", role = c("aut", "cre"))
 Description: Creates lists of condition diagnostic codes based on condition phenotypes in the HDRUK Phenotype Library.
