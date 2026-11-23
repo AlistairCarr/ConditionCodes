@@ -60,12 +60,17 @@ mental_health_codelist_with_codes4 <- fetch_codes(mental_health_codelist,
 
 
 
-CMS_codelist_with_codes <- fetch_codes(CMS_codelist, three_char_ICD10 = TRUE)
+CMS_codelist_with_codes <- fetch_codes2(CMS, three_char_ICD10 = TRUE)
 
 #realistically you'd only make the codelist with codes once then save that file
 
 
 cardiometabolic_codelist_with_codes <- fetch_codes(cardiometabolic, three_char_ICD10 = TRUE)
+
+## can only select one of the codelists if desired
+
+cardiometabolic_codelist_with_codes <- cardiometabolic_codelist_with_codes |>
+  dplyr::select(Condition_category, Dx, phenotype_name, Code_list_source, three_char_ICD10)
 
 #realistically you'd only make the codelist with codes once then save that file
 
@@ -80,12 +85,12 @@ rm(list = setdiff(ls(), c("CMS_codelist_with_codes", "cardiometabolic_codelist_w
 data <- ConditionCodes::ukb_synthetic
 
 
-mm_CMS <- measure_outcome(
+mm_CMS <- measure_outcome2(
   data = data,  #long form data frame with unique patient IDs, diagnostic codes per pt, date of diagnosis, and source of diagnosis
   condition_list = CMS_codelist_with_codes, #lookup file created with fetch_condition()
   mm_outcome_name = "CMS", #suffix for multimorbidity outcome var. Useful if you want to look at multiple way to diagnose mm.
   condition_threshold = 2, #threshold at which to measure multimorbidity,
-  coding_systems = "all",  #could select only read codes, only ICD10 etc
+  coding_systems = "three_char_ICD10",  #could select only read codes, only ICD10 etc
   patient_ID = "eid", #unique study ID / patient identifier
 )
 

@@ -5,7 +5,7 @@
 \alias{CMS}
 \title{A dataset of Cambridge Multimorbidity Score condition phenotypes}
 \format{
-An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) with 71 rows and 4 columns.
+An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) with 71 rows and 5 columns.
 }
 \source{
 \url{https://phenotypes.healthdatagateway.org}

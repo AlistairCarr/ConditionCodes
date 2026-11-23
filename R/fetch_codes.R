@@ -10,7 +10,8 @@
 #' @param wide_format If set to TRUE, Wide format output table created with codes of the same coding system included as a list object. If FALSE, a long-form list is created which may be useful for data dictionaries.Default is TRUE.
 #' @param three_char_ICD10 If set to TRUE, a three character ICD10 variable is created. Useful for compatability with Biobank diagnostic codes. Default is FALSE.
 #' @param collapse_phenotypes If set to TRUE, collapses all condition phenotypes that contribute to a condition category into one row. Default is FALSE.
-#' @import tidyverse, purrr
+#' @importFrom purrr map
+#' @importFrom readr read_csv
 #' @export
 #'
 
@@ -20,20 +21,25 @@ options(timeout = 600) #needs longer before timeout otherwise can't download csv
 
 #clean import link suffix
   x <- x |>
-    dplyr::mutate(Code_list_source = stringr::str_replace(Code_list_source, "detail/", "")) |>    #delete these suffixes
-    dplyr::mutate(Code_list_source = stringr::str_replace(Code_list_source, "#home", ""))  |>
-    dplyr::mutate(Code_list_source = paste0(Code_list_source, "export/codes/")) |>   #add suffix
-    dplyr::mutate(Code_list_source = if_else(is.na(Code_list_source), NA_character_, Code_list_source)) #leavel link as NA if no source link
-
+    dplyr::mutate(
+      Code_list_source = dplyr::if_else(
+        !is.na(Code_list_source),
+        Code_list_source |>
+          stringr::str_replace("detail/", "") |>
+          stringr::str_replace("#home", "") |>
+          stringr::str_replace_all("\\s", "") |>  # remove any whitespace
+          paste0("export/codes/"),
+        NA_character_  # leave NA rows as NA
+      )
+    )
 
 #make empty data frame for output
   phenotype_code_out <- setNames(data.frame(matrix(ncol = 4, nrow = 0)), c("code", "description", "coding_system", "phenotype_name"))
 
 
 #don't look for phenotypes with no import link
-codelist_out <- x %>%
-    dplyr::filter(Code_list_source != "NAexport/codes/") #loop stops working if encounters an NA
-
+  codelist_out <- x |>
+    dplyr::filter(!is.na(Code_list_source))  #stops working if comes across no URL
 #for every phenotype, download the csv file containing the codelist
 
   temp.lists <- purrr::map(codelist_out$Code_list_source, function(url) {
@@ -49,7 +55,7 @@ codelist_out <- x %>%
 
 if(wide_format == TRUE) {
  #make output in wide format
-  phenotype_code_out <- phenotype_code_out %>%
+  phenotype_code_out <- phenotype_code_out |>
       tidyr::pivot_wider(id_cols = phenotype_name,
                   names_from = coding_system,
                   values_from = code,
@@ -97,11 +103,11 @@ if(wide_format == TRUE) {
 
 #join condition lists to original data
 
-x <- left_join(x, phenotype_code_out, by = "phenotype_name")
+x <- dplyr::left_join(x, phenotype_code_out, by = "phenotype_name")
 
 #unlist codes for neater formatting
 
-x <- x %>%
+x <- x |>
   dplyr::mutate(across(contains("codes") | contains("three_char_ICD10"),
                        ~ sapply(.x, paste, collapse = ", ")))
 
@@ -111,25 +117,25 @@ x <- x %>%
 
 if(collapse_phenotypes == TRUE & wide_format == TRUE) {
 
-x <- x %>%
-    dplyr::group_by(Condition_category, Dx) %>%
-    summarise(
+x <- x |>
+    dplyr::group_by(Condition_category, Dx) |>
+    dplyr::summarise(
       across(
         phenotype_name | Code_list_source | contains("codes") | contains("three_char_ICD10"),
         ~ paste0(.x, collapse = ", ")
       ),
       .groups = "drop"
-    ) %>%
+    ) |>
     dplyr::mutate(
       across(
         contains("codes") | contains("three_char_ICD10"),
-        ~ str_split(.x, ", ")
+        ~ stringr::str_split(.x, ", ")
       )
-    )  %>%
+    )  |>
     dplyr::mutate(
       across(
         contains("codes") | contains("three_char_ICD10"),
-        ~ map(.x, ~ unique(trimws(.x[.x != "" & !is.na(.x)]))) #remove white space
+        ~ purrr::map(.x, ~ unique(trimws(.x[.x != "" & !is.na(.x)]))) #remove white space
       )
       )|>
     dplyr::mutate(
@@ -139,7 +145,7 @@ x <- x %>%
       )
     )
 
-x <- x %>%
+x <- x |>
     dplyr::mutate(across(contains("codes") | contains("three_char_ICD10"),
                   ~ sapply(.x, paste, collapse = ", ")))
 

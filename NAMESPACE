@@ -2,9 +2,9 @@
 
 export(fetch_codes)
 export(measure_outcome)
-import(tidyverse, purrr)
 importFrom(dplyr,
   across,
+  all_of,
   any_of,
   arrange,
   c_across,
@@ -15,6 +15,7 @@ importFrom(dplyr,
   if_else,
   left_join,
   mutate,
+  relocate,
   select,
   slice,
   starts_with,
@@ -25,6 +26,7 @@ importFrom(purrr,
   map,
   reduce
 )
+importFrom(readr,read_csv)
 importFrom(rlang,":=")
 importFrom(stringr,
   str_detect,

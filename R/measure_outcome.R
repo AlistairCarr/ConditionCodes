@@ -34,6 +34,7 @@
 #' #' @importFrom stats na.omit setNames
 #' @importFrom dplyr mutate filter select left_join group_by arrange slice
 #'   summarise across any_of contains starts_with c_across everything if_else
+#'   relocate all_of
 #' @importFrom stringr str_replace str_trim str_detect str_split
 #' @importFrom tidyr pivot_longer
 #' @importFrom purrr map reduce discard
@@ -57,25 +58,25 @@ measure_outcome <- function(data, condition_list, mm_outcome_name, condition_thr
 
 if(by_phenotype == FALSE) {
 
-temp <- condition_list %>%
-    dplyr::group_by(Condition_category, Dx) %>%
+temp <- condition_list |>
+    dplyr::group_by(Condition_category, Dx) |>
     dplyr::summarise(
       across(
         phenotype_name | Code_list_source | contains("codes") | contains("three_char_ICD10"),
         ~ paste0(.x, collapse = ", ")
       ),
       .groups = "drop"
-    ) %>%
+    ) |>
     dplyr::mutate(
       across(
         contains("codes") | contains("three_char_ICD10"),
-        ~ str_split(.x, ", ")
+        ~ stringr::str_split(.x, ", ")
       )
-    )  %>%
+    )  |>
     dplyr::mutate(
       across(
         contains("codes") | contains("three_char_ICD10"),
-        ~ map(.x, ~ unique(trimws(.x[.x != "" & !is.na(.x)]))) #remove white space
+        ~ purrr::map(.x, ~ unique(trimws(.x[.x != "" & !is.na(.x)]))) #remove white space
       )
     )|>
     dplyr::mutate(
@@ -86,8 +87,8 @@ temp <- condition_list %>%
 
    ## unlist codes
 
-temp <- temp %>%
-          mutate(across(contains("codes") | contains("three_char_ICD10"),
+temp <- temp |>
+          dplyr::mutate(across(contains("codes") | contains("three_char_ICD10"),
                         ~ sapply(.x, paste, collapse = ", ")))
 
 }
@@ -102,14 +103,15 @@ temp <- temp %>%
 
   }
 
- temp <- temp %>%
+ temp <- temp |>
   dplyr::mutate(across(c(contains("codes"), any_of("three_char_ICD10")), ~ stringr::str_replace_all(.x, ", ", "|")))
 
 
 ### make output file one per patient
 
-out <- data %>%
-   dplyr::distinct(data[patient_ID])
+ out <- data |>
+   dplyr::select(all_of(patient_ID)) |>
+   dplyr::distinct()
 
 
 
@@ -120,22 +122,22 @@ dx_name <- temp$Dx[i]
 #select the coding system columns that will be used
 
   if (coding_systems == "all") {
-    cols <- temp[i, ] %>%
+    cols <- temp[i, ] |>
       dplyr::select(contains("codes"), any_of("three_char_ICD10"))
   } else {
-    cols <- temp[i, ] %>%
+    cols <- temp[i, ] |>
       dplyr::select(any_of(coding_systems))
   }
 
 #get regex list of condition codes across all selected condition coding systems
 
 pattern <- cols |>
-  unlist() %>%
-  na.omit() %>%
-  stringr::str_split(",\\s*") %>%
-  unlist() %>%
-  stringr::str_trim() %>%
-  purrr::discard(~ .x == "") %>%  # remove empty strings
+  unlist() |>
+  na.omit() |>
+  stringr::str_split(",\\s*") |>
+  unlist() |>
+  stringr::str_trim() |>
+  purrr::discard(~ .x == "") |>  # remove empty strings
   paste(collapse = "|")
 
 # Skip if no codes found for this condition
@@ -144,11 +146,11 @@ if (pattern == "") {
   next
 }
 
-temp2 <- data %>%
-    dplyr::filter(!is.na(first.dx.date)) %>% #don't run for ICD 10 codes people haven't been diagnosed with
-    dplyr::filter(stringr::str_detect(diagnostic_code, pattern)) %>% #take each row from the conditions list, and go through each code, and if it matches with the row in the data of health conditions, filter on that
-    dplyr::slice_min(order_by=first.dx.date, by=patient_ID, with_ties=FALSE) %>% #dplyr::select the earliest admission date per person per condition
-    dplyr::select(patient_ID, inci=first.dx.date, first.dx.source)   #change prefix of admission date column to 'inci'
+temp2 <- data |>
+    dplyr::filter(!is.na(first.dx.date)) |> #don't run for ICD 10 codes people haven't been diagnosed with
+    dplyr::filter(stringr::str_detect(diagnostic_code, pattern)) |> #take each row from the conditions list, and go through each code, and if it matches with the row in the data of health conditions, filter on that
+    dplyr::slice_min(order_by = first.dx.date, by = all_of(patient_ID), with_ties = FALSE) |> #dplyr::select the earliest admission date per person per condition
+  dplyr::select(all_of(patient_ID), inci=first.dx.date, first.dx.source)   #change prefix of admission date column to 'inci'
 
 if(by_phenotype == FALSE) {
 names(temp2)[2] <- paste0('inci.', temp$Dx[i])  #names based on condition groupings
@@ -161,17 +163,17 @@ if(by_phenotype == TRUE) {
 }
 
 
-out <- out %>% left_join(temp2, by = patient_ID)
+out <- out |> dplyr::left_join(temp2, by = patient_ID)
 
 }
 
 #make multimorbidity outcome variable
 
-out <- out %>%
-  dplyr::rowwise() %>%
-  dplyr::mutate(across(starts_with("inci."), ~ as.Date(.x))) %>%
+out <- out |>
+  dplyr::rowwise() |>
+  dplyr::mutate(across(starts_with("inci."), ~ as.Date(.x))) |>
   dplyr::mutate(
-    condition_count = sum(!is.na(c_across(starts_with("inci.")))),
+    condition_count = sum(!is.na(dplyr::c_across(starts_with("inci.")))),
     "mm.{mm_outcome_name}" := dplyr::if_else(condition_count >= condition_threshold, 1, 0) #set to 1 if greather than threshold
   )
 
@@ -180,19 +182,19 @@ out <- out %>%
 
 #make long format of data plus diagnosis source
 
-temp_out <- out %>%
-  dplyr::rowwise() %>%
-  dplyr::mutate(across(starts_with("inci."), ~ as.Date(.x))) %>%
+temp_out <- out |>
+  dplyr::rowwise() |>
+  dplyr::mutate(across(starts_with("inci."), ~ as.Date(.x))) |>
   dplyr::mutate(
-    condition_count = sum(!is.na(c_across(starts_with("inci.")))),
+    condition_count = sum(!is.na(dplyr::c_across(starts_with("inci.")))),
     "mm_status.{mm_outcome_name}" := dplyr::if_else(condition_count >= condition_threshold, 1, 0)
-  ) %>%
+  ) |>
   tidyr::pivot_longer(
     cols = c(starts_with("inci."), starts_with("dx.source.")),
     names_to = c(".value", "dx"),
     names_pattern = "^(inci|dx\\.source)\\.(.*)"
-  ) %>%
-  dplyr::select(patient_ID, condition_count, any_of(paste0("mm_status.", mm_outcome_name)), dx, inci, dx.source) %>%
+  ) |>
+  dplyr::select(all_of(patient_ID), condition_count, any_of(paste0("mm_status.", mm_outcome_name)), dx, inci, dx.source) |>
   dplyr::rename(date = inci)
 
 
@@ -201,34 +203,36 @@ temp_out <- out %>%
 
 
 
-condition_ranks <- map(1:condition_threshold, function(rank) {
+condition_ranks <- purrr::map(1:condition_threshold, function(rank) {
 
   rank_label <- c("first", "second", "third", "fourth", "fifth",
                   "sixth", "seventh", "eighth", "ninth", "tenth")[rank]
 
-  temp_out %>%
-    dplyr::group_by(patient_ID) %>%
-    dplyr::arrange(date) %>%
-    dplyr::slice(rank) %>%
+  temp_out |>
+    dplyr::group_by(.data[[patient_ID]]) |>
+    dplyr::arrange(date) |>
+    dplyr::slice(rank) |>
     dplyr::mutate(
       "inci.{rank_label}_con" := date,
       "{rank_label}_con.dx" := ifelse(!is.na(date), stringr::str_replace(dx, "inci\\.", ""), NA),
       "{rank_label}_con.source" := dx.source
-    ) %>%
-    dplyr::select(patient_ID,
+    ) |>
+    dplyr::select(all_of(patient_ID),
                   contains(paste0(rank_label, "_con")),
                   starts_with("inci."))
+
+
 })
 
 # Join all ranked condition data frames to out
-out <- reduce(condition_ranks, ~ left_join(.x, .y, by = "patient_ID"), .init = out)
+out <- purrr::reduce(condition_ranks, ~ dplyr::left_join(.x, .y, by = patient_ID), .init = out)
 
 # make data for multimorbidity diagnosis
 
 rank_label <- c("first", "second", "third", "fourth", "fifth",
                 "sixth", "seventh", "eighth", "ninth", "tenth")[condition_threshold]
 
-out <- out %>%
+out <- out |>
   dplyr::mutate(
     !!paste0("inci.mm.", mm_outcome_name) := .data[[paste0("inci.", rank_label, "_con")]]
   ) |>
@@ -240,7 +244,7 @@ if (contributing_conditions == FALSE) {
   rank_labels <- c("first", "second", "third", "fourth", "fifth",
                    "sixth", "seventh", "eighth", "ninth", "tenth")[1:condition_threshold]
 
-  out <- out %>%
+  out <- out |>
     dplyr::select(-any_of(c(
       paste0("inci.", rank_labels, "_con"),
       paste0(rank_labels, "_con.dx"),
@@ -255,7 +259,7 @@ if (condition_diagnoses == FALSE) {
 
     cols_to_drop <- names(out)[2:(which(names(out) == "condition_count") - 1)] #drop all condition diagnosis from second column to just before condition count
 
-    out <- out %>%
+    out <- out |>
       dplyr::select(-any_of(cols_to_drop))
 
 }
@@ -264,7 +268,7 @@ if (condition_diagnoses == FALSE) {
 if (condition_count == FALSE) {
 
 
-  out <- out %>%
+  out <- out |>
     dplyr::select(-condition_count)
 
 }
