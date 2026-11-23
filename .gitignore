@@ -5,3 +5,15 @@
 .httr-oauth
 .DS_Store
 .quarto
+data/CMS_codelist_without_codes.xlsx
+data/CMSv2.xlsx
+data/temp.xlsx
+data/temp2.xlsx
+data/total_ukb_synthetic.rds
+data/ukb_datafields.rds
+data/ukb_synthetic.rds
+inst/total_ukb_synthetic.rds
+inst/ukb_synthetic.rds
+inst/ukb_datafields.rds
+inst/CMS_codelist_without_codes.xlsx
+inst/CMSv2.xlsx

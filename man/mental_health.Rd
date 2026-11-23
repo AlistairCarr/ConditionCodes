@@ -14,6 +14,6 @@ An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) w
 mental_health
 }
 \description{
-A data frame containing CALIBER phenotype names and HDRUK Library URLs.
+A data frame containing CALIBER and non-CALIBER phenotype names and HDRUK Library URLs.
 }
 \keyword{datasets}

@@ -1,7 +1,6 @@
 
 # library(devtools)
 # library(roxygen2)
-# library(tidyverse)
 # library(purrr)
 
 #' A function to fetch codelists from the HDRUK Library
@@ -151,27 +150,6 @@ return(x)
 
 }
 
-
-
-
-output <- temp2 |>
-  dplyr::group_by(Condition_category, Dx) |>
-  summarise(
-    across(c("phenotype_name", "Code_list_source"),
-           ~ paste0(.x, collapse = ", ")
-    ))
-
-
-output <- left_join(output, x, by = "Condition_category")
-
-output <- output %>%
-  dplyr::mutate(across(contains("codes") | contains("three_char_ICD10"),
-                ~ sapply(.x, paste, collapse = ", ")))
-}
-
-  return(x)
-
-}
 
 
 

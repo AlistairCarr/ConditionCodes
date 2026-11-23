@@ -4,12 +4,19 @@
 \alias{fetch_codes}
 \title{A function to fetch codelists from the HDRUK Library}
 \usage{
-fetch_codes(x, wide_format = TRUE, three_char_ICD10 = FALSE)
+fetch_codes(
+  x,
+  wide_format = TRUE,
+  collapse_phenotypes = FALSE,
+  three_char_ICD10 = FALSE
+)
 }
 \arguments{
 \item{x}{Dataset consisting of phenotype names, as written in the HDRUK Library, and the URL for each phenotype.Condition categories can consist of multiple phenotypes, but each phenotype must be on a seperate row.}
 
 \item{wide_format}{If set to TRUE, Wide format output table created with codes of the same coding system included as a list object. If FALSE, a long-form list is created which may be useful for data dictionaries.Default is TRUE.}
+
+\item{collapse_phenotypes}{If set to TRUE, collapses all condition phenotypes that contribute to a condition category into one row. Default is FALSE.}
 
 \item{three_char_ICD10}{If set to TRUE, a three character ICD10 variable is created. Useful for compatability with Biobank diagnostic codes. Default is FALSE.}
 }
