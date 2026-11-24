@@ -13,7 +13,6 @@
 #' @importFrom purrr map
 #' @importFrom readr read_csv
 #' @export
-#'
 
 fetch_codes <- function(x, wide_format = TRUE, collapse_phenotypes = FALSE, three_char_ICD10 = FALSE) { #long form codes
 

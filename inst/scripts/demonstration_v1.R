@@ -9,6 +9,10 @@ remove.packages("ConditionCodes")
 remotes::install_github("AlistairCarr/ConditionCodes", force = TRUE)
 
 library(ConditionCodes)
+
+?fetch_codes
+
+?measure_outcome
 ##
 
 ###### Making code lists #######
